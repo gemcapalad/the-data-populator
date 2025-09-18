@@ -128,18 +128,18 @@ def name_matcher(old_df, new_df):
     print("Merge success!")
 
 def duplicate_checker(df):
-    duplicate_tins = df[df.duplicated(subset="tin_no", keep=False)]
-    duplicate_ids = df[df.duplicated(subset="id", keep=False)]
-    duplicate_names = df[df.duplicated(subset=["family_name", "first_name"], keep=False)]
-    duplicate_emails = df[df.duplicated(subset="email", keep=False)]
+    # duplicate_tins = df[df.duplicated(subset="tin_no", keep=False)]
+    # duplicate_ids = df[df.duplicated(subset="id", keep=False)]
+    # duplicate_names = df[df.duplicated(subset=["family_name", "first_name"], keep=False)]
+    duplicate_emails = df[df.duplicated(subset="email", keep=False) & ~df["email"].isna()]
 
     
-    print("Duplicate IDs")
-    print(duplicate_ids)
-    print("Duplicate TINs")
-    print(duplicate_tins)
-    print("Duplicate names")
-    print(duplicate_names)
+    # print("Duplicate IDs")
+    # print(duplicate_ids)
+    # print("Duplicate TINs")
+    # print(duplicate_tins)
+    # print("Duplicate names")
+    # print(duplicate_names)
     print("Duplicate emails")
     print(duplicate_emails)
 
@@ -188,14 +188,22 @@ def get_share_capital(merged_df, share_capital_df):
     
     print("Merge success!")
 
-def check_withdrawn_members(df):
-    print(df.loc[df["August"] == 0])
+def check_active_members(df):
+    df.loc[~df["August"].isna()].to_excel("data/merged_version_3.xlsx", index=False)
+
+def format_numbers(df):
+    df["id"] = df["id"].astype(str).str.replace("1984-", "")
+    df["gender"] = df["gender"].str.strip().replace("F", "Female").replace("M", "Male")
+    df["contact_no"] = "0" + df["contact_no"].astype(str)
+    df["email"] = df["email"].str.lower()
+
+    df.to_excel("data/merged_version_4.xlsx", index=False)
 
 def main():
     old_df = pd.read_excel("data/old_version_5.xlsx")
     new_df = pd.read_excel("data/new_version_2.xlsx")
     share_capital_df = pd.read_excel("data/share_capital_august.xlsx")
-    test_df = pd.read_excel("data/merged_version_1.xlsx")
+    test_df = pd.read_excel("data/merged_version_3.xlsx")
 
     proper_birthdays = [] # i put d bdays here
     
@@ -214,7 +222,9 @@ def main():
     # name_matcher(old_df, new_df)
     # duplicate_checker(test_df)
     # share_capital_duplicate_checker(share_capital_df)
-    get_share_capital(test_df, share_capital_df)
+    # get_share_capital(test_df, share_capital_df)
+    # check_active_members(test_df)
+    format_numbers(test_df)
 
 if __name__ == '__main__':
     main()
