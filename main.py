@@ -114,10 +114,88 @@ def tin_matcher_enhanced(old_df, new_df):
 
     valid[["family_name", "first_name", "tin_no"]].to_excel("data/matches.xlsx", index=False)
 
+def name_matcher(old_df, new_df):
+    merged_df = pd.merge(
+        new_df,
+        old_df,
+        on="tin_no",
+        how="left",
+        suffixes=("", "_old") 
+    )
+
+    merged_df.to_excel("data/merged_version_1.xlsx", index=False)
+    
+    print("Merge success!")
+
+def duplicate_checker(df):
+    duplicate_tins = df[df.duplicated(subset="tin_no", keep=False)]
+    duplicate_ids = df[df.duplicated(subset="id", keep=False)]
+    duplicate_names = df[df.duplicated(subset=["family_name", "first_name"], keep=False)]
+    duplicate_emails = df[df.duplicated(subset="email", keep=False)]
+
+    
+    print("Duplicate IDs")
+    print(duplicate_ids)
+    print("Duplicate TINs")
+    print(duplicate_tins)
+    print("Duplicate names")
+    print(duplicate_names)
+    print("Duplicate emails")
+    print(duplicate_emails)
+
+def share_capital_duplicate_checker(df):
+    duplicate_names = df[df.duplicated(subset="name", keep=False)]
+
+    print(duplicate_names)
+
+def get_share_capital(merged_df, share_capital_df):
+    merged_df["full_name"] = merged_df["family_name"].str.strip() + ", " + merged_df["first_name"].str.strip()
+    # merged_df["full_name_initialed"] = merged_df["family_name"].str.strip() + ", " + merged_df["first_name"].str.strip() + " " + merged_df["middle_name"].str[0] + "."
+    # merged_df["middle_initial"] = merged_df["middle_name"].str[0] + "."
+
+    share_capital_df[["family_name", "first_middle"]] = share_capital_df["name"].str.split(",", n=1, expand=True)
+    share_capital_df["family_name"] = share_capital_df["family_name"].str.strip()
+    share_capital_df["first_middle"] = share_capital_df["first_middle"].str.strip()
+    share_capital_df["first_name"] = share_capital_df["first_middle"].str.split(" ").str[:-1].str.join(" ")
+    # share_capital_df["middle_initial"] = share_capital_df["first_middle"].str.split(" ").str[-1] + "."
+    share_capital_df["formatted_name"] = share_capital_df["family_name"] + ", " + share_capital_df["first_name"]
+
+    share_capital_df["match"] = share_capital_df["formatted_name"].isin(merged_df["full_name"])
+    all = share_capital_df["formatted_name"].count()
+    matches = share_capital_df["match"].sum()
+
+    print(f'Full name matches: {matches} | All share capital names in merged: {all} | Total missing: {all - matches}')
+
+    no_match = share_capital_df.loc[~share_capital_df["formatted_name"].isin(merged_df["full_name"])]
+
+    # probably_wed = no_match.loc[~share_capital_df["middle_initial"].str.strip().isin(merged_df["middle_initial"])]
+
+    print("All no matches")
+    print(no_match)
+    # print("Probably wed no matches")
+    # print(probably_wed)
+    # no_match["name"].to_excel("data/current_members_not_in_database.xlsx")
+
+    final_df = pd.merge(
+        merged_df,
+        share_capital_df["August"],
+        left_on="full_name",
+        right_on=share_capital_df["formatted_name"],
+        how="left" 
+    )
+
+    final_df.to_excel("data/merged_version_2.xlsx", index=False)
+    
+    print("Merge success!")
+
+def check_withdrawn_members(df):
+    print(df.loc[df["August"] == 0])
+
 def main():
     old_df = pd.read_excel("data/old_version_5.xlsx")
     new_df = pd.read_excel("data/new_version_2.xlsx")
-    test_df = pd.read_excel("data/old_version_5.xlsx")
+    share_capital_df = pd.read_excel("data/share_capital_august.xlsx")
+    test_df = pd.read_excel("data/merged_version_1.xlsx")
 
     proper_birthdays = [] # i put d bdays here
     
@@ -132,7 +210,11 @@ def main():
     # number_dash_remover(test_df)
     # landline_checker(test_df)
     # tin_matcher(old_df, new_df)
-    tin_matcher_enhanced(old_df, new_df)
+    # tin_matcher_enhanced(old_df, new_df)
+    # name_matcher(old_df, new_df)
+    # duplicate_checker(test_df)
+    # share_capital_duplicate_checker(share_capital_df)
+    get_share_capital(test_df, share_capital_df)
 
 if __name__ == '__main__':
     main()
