@@ -87,8 +87,35 @@ def number_dash_remover(df):
 def landline_checker(df):
     print(df.loc[df["landline"].astype(str).str.match(r"^\(\d{3}\)\d{3}-\d{4}$"), ["family_name", "landline"]])
 
+def tin_matcher(old_df, new_df):
+    old_df["tin_in_new_excel"] = old_df["tin_no"].isin(new_df["tin_no"])
+    all = old_df["tin_no"].count()
+    matches = old_df["tin_in_new_excel"].sum()
+
+    print(f'TIN matches: {matches} All TIN: {all}')
+
+    print(old_df.loc[~old_df["tin_no"].isin(new_df["tin_no"]), ["first_name", "family_name", "tin_no"]])
+
+def tin_matcher_enhanced(old_df, new_df):
+    # old_df_no_match = old_df.loc[~old_df["tin_no"].isin(new_df["tin_no"]), ["tin_no"]].rename(columns={"tin_no": "tin_in_old"})
+    # new_df_no_match = new_df.loc[~new_df["tin_no"].isin(old_df["tin_no"]), ["tin_no"]].rename(columns={"tin_no": "tin_in_new"})
+
+    # no_matches = pd.concat([old_df_no_match.reset_index(drop=True), new_df_no_match.reset_index(drop=True)], axis=1)
+
+    # no_matches.to_excel("data/no_matches.xlsx")
+
+    new_df["tin_in_old_excel"] = new_df["tin_no"].isin(old_df["tin_no"])
+    all = new_df["tin_no"].count()
+    matches = new_df["tin_in_old_excel"].sum()
+
+    print(f'TIN matches: {matches} | All TIN: {all} | Total Missing: {all - matches}')
+
+    valid = new_df.loc[~new_df["tin_no"].isin(old_df["tin_no"]), ["first_name", "family_name", "tin_no"]]
+
+    valid[["family_name", "first_name", "tin_no"]].to_excel("data/matches.xlsx", index=False)
+
 def main():
-    old_df = pd.read_excel("data/old_version_1.xlsx")
+    old_df = pd.read_excel("data/old_version_5.xlsx")
     new_df = pd.read_excel("data/new_version_2.xlsx")
     test_df = pd.read_excel("data/old_version_5.xlsx")
 
@@ -103,7 +130,9 @@ def main():
     # number_checker(test_df)
     # number_landline_checker(test_df)
     # number_dash_remover(test_df)
-    landline_checker(test_df)
+    # landline_checker(test_df)
+    # tin_matcher(old_df, new_df)
+    tin_matcher_enhanced(old_df, new_df)
 
 if __name__ == '__main__':
     main()
