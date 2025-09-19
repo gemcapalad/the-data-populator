@@ -127,22 +127,24 @@ def name_matcher(old_df, new_df):
     
     print("Merge success!")
 
-def duplicate_checker(df):
-    # duplicate_tins = df[df.duplicated(subset="tin_no", keep=False)]
-    # duplicate_ids = df[df.duplicated(subset="id", keep=False)]
-    # duplicate_names = df[df.duplicated(subset=["family_name", "first_name"], keep=False)]
-    duplicate_emails = df[df.duplicated(subset="email", keep=False) & ~df["email"].isna()]
-
+def duplicate_checker(df, d):
+    if d == 'tins': 
+        duplicate_tins = df[df.duplicated(subset="tin_no", keep=False)]
+        print("Duplicate TINs")
+        print(duplicate_tins)
+    elif d == 'ids':
+        duplicate_ids = df[df.duplicated(subset="id", keep=False)]
+        print("Duplicate IDs")
+        print(duplicate_ids)
+    elif d == 'names':
+        duplicate_names = df[df.duplicated(subset=["family_name", "first_name"], keep=False)]
+        print("Duplicate names")
+        print(duplicate_names)
+    elif d == 'emails':
+        duplicate_emails = df[df.duplicated(subset="email", keep=False) & ~df["email"].isna()]
+        print("Duplicate emails")
+        print(duplicate_emails)
     
-    # print("Duplicate IDs")
-    # print(duplicate_ids)
-    # print("Duplicate TINs")
-    # print(duplicate_tins)
-    # print("Duplicate names")
-    # print(duplicate_names)
-    print("Duplicate emails")
-    print(duplicate_emails)
-
 def share_capital_duplicate_checker(df):
     duplicate_names = df[df.duplicated(subset="name", keep=False)]
 
@@ -194,16 +196,28 @@ def check_active_members(df):
 def format_numbers(df):
     df["id"] = df["id"].astype(str).str.replace("1984-", "")
     df["gender"] = df["gender"].str.strip().replace("F", "Female").replace("M", "Male")
-    df["contact_no"] = "0" + df["contact_no"].astype(str)
     df["email"] = df["email"].str.lower()
 
     df.to_excel("data/merged_version_4.xlsx", index=False)
+
+def get_members_for_insert(final_df, current_df):
+    invalid_mask = final_df["email"].astype(str).str.contains("@", na=False)
+
+    valid = final_df.loc[invalid_mask]
+
+    valid.to_excel("data/cleaned_emails.xlsx", index=False)
+    
+def clean_update_template(final_df, current_df):
+    valid = final_df.loc[~final_df["id"].isin(current_df["id"])]
+
+    valid.to_excel("data/update_template_version_2.xlsx")
 
 def main():
     old_df = pd.read_excel("data/old_version_5.xlsx")
     new_df = pd.read_excel("data/new_version_2.xlsx")
     share_capital_df = pd.read_excel("data/share_capital_august.xlsx")
-    test_df = pd.read_excel("data/merged_version_3.xlsx")
+    test_df = pd.read_excel("data/cleaned_emails.xlsx")
+    current_df = pd.read_excel("data/update_template.xlsx")
 
     proper_birthdays = [] # i put d bdays here
     
@@ -220,11 +234,13 @@ def main():
     # tin_matcher(old_df, new_df)
     # tin_matcher_enhanced(old_df, new_df)
     # name_matcher(old_df, new_df)
-    # duplicate_checker(test_df)
+    # duplicate_checker(test_df, "ids")
     # share_capital_duplicate_checker(share_capital_df)
     # get_share_capital(test_df, share_capital_df)
     # check_active_members(test_df)
-    format_numbers(test_df)
+    # format_numbers(test_df)
+    # get_members_for_insert(test_df, current_df)
+    clean_update_template(test_df, current_df)
 
 if __name__ == '__main__':
     main()
