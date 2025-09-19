@@ -163,17 +163,17 @@ def get_share_capital(merged_df, share_capital_df):
     share_capital_df["formatted_name"] = share_capital_df["family_name"] + ", " + share_capital_df["first_name"]
 
     share_capital_df["match"] = share_capital_df["formatted_name"].isin(merged_df["full_name"])
-    all = share_capital_df["formatted_name"].count()
-    matches = share_capital_df["match"].sum()
+    # all = share_capital_df["formatted_name"].count()
+    # matches = share_capital_df["match"].sum()
 
-    print(f'Full name matches: {matches} | All share capital names in merged: {all} | Total missing: {all - matches}')
+    # print(f'Full name matches: {matches} | All share capital names in merged: {all} | Total missing: {all - matches}')
 
-    no_match = share_capital_df.loc[~share_capital_df["formatted_name"].isin(merged_df["full_name"])]
+    # no_match = share_capital_df.loc[~share_capital_df["formatted_name"].isin(merged_df["full_name"])]
 
     # probably_wed = no_match.loc[~share_capital_df["middle_initial"].str.strip().isin(merged_df["middle_initial"])]
 
-    print("All no matches")
-    print(no_match)
+    # print("All no matches")
+    # print(no_match)
     # print("Probably wed no matches")
     # print(probably_wed)
     # no_match["name"].to_excel("data/current_members_not_in_database.xlsx")
@@ -186,7 +186,11 @@ def get_share_capital(merged_df, share_capital_df):
         how="left" 
     )
 
-    final_df.to_excel("data/merged_version_2.xlsx", index=False)
+    final_df["match"] = final_df["amount"] == final_df["August"]
+    mismatches = final_df[final_df["match"] == False]
+    print(mismatches)
+
+    # final_df.to_excel("data/merged_version_2.xlsx", index=False)
     
     print("Merge success!")
 
@@ -217,7 +221,7 @@ def main():
     new_df = pd.read_excel("data/new_version_2.xlsx")
     share_capital_df = pd.read_excel("data/share_capital_august.xlsx")
     test_df = pd.read_excel("data/cleaned_emails.xlsx")
-    current_df = pd.read_excel("data/update_template.xlsx")
+    current_df = pd.read_excel("data/update_template_version_2.xlsx")
 
     proper_birthdays = [] # i put d bdays here
     
@@ -234,13 +238,13 @@ def main():
     # tin_matcher(old_df, new_df)
     # tin_matcher_enhanced(old_df, new_df)
     # name_matcher(old_df, new_df)
-    # duplicate_checker(test_df, "ids")
+    # duplicate_checker(current_df, "emails")
     # share_capital_duplicate_checker(share_capital_df)
-    # get_share_capital(test_df, share_capital_df)
+    get_share_capital(current_df, share_capital_df)
     # check_active_members(test_df)
     # format_numbers(test_df)
     # get_members_for_insert(test_df, current_df)
-    clean_update_template(test_df, current_df)
+    # clean_update_template(test_df, current_df)
 
 if __name__ == '__main__':
     main()
