@@ -150,47 +150,52 @@ def share_capital_duplicate_checker(df):
 
     print(duplicate_names)
 
-def get_share_capital(merged_df, share_capital_df):
+def get_share_capital(merged_df, test_df):
     merged_df["full_name"] = merged_df["family_name"].str.strip() + ", " + merged_df["first_name"].str.strip()
     # merged_df["full_name_initialed"] = merged_df["family_name"].str.strip() + ", " + merged_df["first_name"].str.strip() + " " + merged_df["middle_name"].str[0] + "."
     # merged_df["middle_initial"] = merged_df["middle_name"].str[0] + "."
 
-    share_capital_df[["family_name", "first_middle"]] = share_capital_df["name"].str.split(",", n=1, expand=True)
-    share_capital_df["family_name"] = share_capital_df["family_name"].str.strip()
-    share_capital_df["first_middle"] = share_capital_df["first_middle"].str.strip()
-    share_capital_df["first_name"] = share_capital_df["first_middle"].str.split(" ").str[:-1].str.join(" ")
-    # share_capital_df["middle_initial"] = share_capital_df["first_middle"].str.split(" ").str[-1] + "."
-    share_capital_df["formatted_name"] = share_capital_df["family_name"] + ", " + share_capital_df["first_name"]
+    # merged_df["full_name"].to_excel("data/misc/test_fullname.xlsx")
 
-    share_capital_df["match"] = share_capital_df["formatted_name"].isin(merged_df["full_name"])
-    # all = share_capital_df["formatted_name"].count()
-    # matches = share_capital_df["match"].sum()
+    test_df[["family_name", "first_middle"]] = test_df["name"].str.split(",", n=1, expand=True)
+    test_df["family_name"] = test_df["family_name"].str.strip()
+    test_df["first_middle"] = test_df["first_middle"].str.strip()
+    # test_df["first_name"] = test_df["first_middle"].str.split(" ").str[:-1].str.join(" ")
+    test_df["formatted_name"] = test_df["family_name"] + ", " + test_df["first_middle"].apply(clean_names)
+    # test_df["middle_initial"] = test_df["first_middle"].str.split(" ").str[-1] + "."
+    # test_df["formatted_name"] = test_df["family_name"] + ", " + test_df["first_name"]
+    # test_df["formatted_name"].to_excel("data/misc/test_formatted.xlsx")
 
-    # print(f'Full name matches: {matches} | All share capital names in merged: {all} | Total missing: {all - matches}')
+    test_df["match"] = test_df["formatted_name"].isin(merged_df["full_name"])
+    all = test_df["formatted_name"].count()
+    matches = test_df["match"].sum()
 
-    # no_match = share_capital_df.loc[~share_capital_df["formatted_name"].isin(merged_df["full_name"])]
+    print(f'Full name matches: {matches} | All loan names in final members list: {all} | Total missing: {all - matches}')
 
-    # probably_wed = no_match.loc[~share_capital_df["middle_initial"].str.strip().isin(merged_df["middle_initial"])]
+    no_match = test_df.loc[~test_df["formatted_name"].isin(merged_df["full_name"])]
+    # no_match.to_excel("data/misc/invalid_old_loans.xlsx", index=False)
 
-    # print("All no matches")
-    # print(no_match)
+    # probably_wed = no_match.loc[~test_df["middle_initial"].str.strip().isin(merged_df["middle_initial"])]
+
+    print("All no matches")
+    print(no_match)
     # print("Probably wed no matches")
     # print(probably_wed)
     # no_match["name"].to_excel("data/current_members_not_in_database.xlsx")
 
     final_df = pd.merge(
-        merged_df,
-        share_capital_df["August"],
-        left_on="full_name",
-        right_on=share_capital_df["formatted_name"],
+        test_df,
+        merged_df["user_id"],
+        left_on="formatted_name",
+        right_on=merged_df["full_name"],
         how="left" 
     )
 
-    final_df["match"] = final_df["amount"] == final_df["August"]
-    mismatches = final_df[final_df["match"] == False]
-    print(mismatches)
+    # final_df["match"] = final_df["amount"] == final_df["August"]
+    # mismatches = final_df[final_df["match"] == False]
+    # print(mismatches)
 
-    # final_df.to_excel("data/merged_version_2.xlsx", index=False)
+    final_df.to_excel("data/loans/renewal_loans_version_2.xlsx", index=False)
     
     print("Merge success!")
 
@@ -229,3 +234,17 @@ def separate_loans(df):
     old.to_excel("data/loans/old_loans.xlsx", index=False)
     new.to_excel("data/loans/new_loans.xlsx", index=False)
     renewal.to_excel("data/loans/renewal_loans.xlsx", index=False)
+
+def clean_names(name: str) -> str:
+    if pd.isna(name):
+        return ""
+    name = name.strip()
+    if name.endswith("."):
+        parts = name.split()
+        return " ".join(parts[:-1])
+    else:
+        return name
+    
+def merge_loans(old_df, new_df, renewal_df):
+    combined = pd.concat([old_df, new_df, renewal_df], ignore_index=True)
+    combined.to_excel("data/loans/merged_loans.xlsx", index=False)
